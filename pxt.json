@@ -1,0 +1,21 @@
+{
+    "name": "OLED-Maze",
+    "description": "",
+    "dependencies": {
+        "core": "*",
+        "radio": "*",
+        "ssd1309": "github:mtkilpatrick/pxt-microbit-ssd1309#master"
+    },
+    "files": [
+        "main.blocks",
+        "main.ts",
+        "README.md"
+    ],
+    "testFiles": [
+        "test.ts"
+    ],
+    "supportedTargets": [
+        "microbit"
+    ],
+    "preferredEditor": "tsprj"
+}

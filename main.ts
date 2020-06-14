@@ -219,26 +219,38 @@ function toWallGrid(dir: number): boolean {
     return false
 }
 
-function dragonBlockedCell(dir: number): boolean {
+function getBlock(x: number, y: number) : boolean{
+    return (block[cellNumber(x, y)] != 0)
+}
+
+function isDragonBlockedJunction(dir: number): boolean {
+    let flag: boolean = false
+    let cx = Math.trunc(dragonx / scale)
+    let cy = Math.trunc(dragony / scale)
     switch (dir) {
         case  UP: {
-
+            if (cy > 0)  flag = getBlock(cx, cy - 1)
+            break
         }
         case  DOWN: {
-
+            if (cy < (mazeHeight - 1)) flag  = getBlock(cx, cy + 1)
+            break
         }
         case  LEFT: {
-            if (dragonx > 0) {
-                
-            }
+            if (cx > 0)   flag = getBlock(cx - 1,cy) 
             break
-
         }
         case  RIGHT: {
-
+            if (cx < (mazeWidth - 1)) flag = getBlock(cx + 1,cy) 
+            break
         }
     }
-    return false
+    if (flag) {
+//        basic.showIcon(IconNames.Duck)
+ //       basic.pause(1000)
+//        basic.clearScreen()
+    }
+    return flag
 }
 function numberOfDirections(x: number, y: number) : number {
     let n =  NUM_DIRS[getCell(x,y)]
@@ -252,81 +264,139 @@ function canMove(x: number, y: number, dir: number): boolean {
         return true
     }
 }
-function canDragonMove(dir: number): boolean {
-    let wall: boolean = ((WALL_BITS[dir] & getCell(dragonx, dragony)) != 0)
-    wall = wall || dragonBlockedCell(dir)
-    return !wall
-}
-
 function moveDragon() {
     drawPlayer(dragonx, dragony, false)
     dragonx += DX[dragondir] * scaleMoveFactor
     dragony += DY[dragondir] * scaleMoveFactor
     dragonstate = (dragonstate + 1) % movecycle
 }
-function chooseBestDir(avoid: number) : number {
+
+function dragonDirections() {
     let diffx = dragonx - fx
     let diffy = dragony - fy
     let xchoice = (diffx > 0) ? LEFT : RIGHT
     let ychoice = (diffy > 0) ? UP : DOWN
-    if (Math.abs(diffx) >= Math.abs(diffy)) {
-        if (canDragonMove(xchoice) && (xchoice != avoid)) {
-            return xchoice
-        } else if (canDragonMove(ychoice) && (ychoice != avoid)) {
-            return ychoice
-        } else if (canDragonMove(ychoice ^ 2) && ((ychoice^2) != avoid)) {
-            return (ychoice ^ 2)
+    if (Math.abs(diffy) >= Math.abs(diffx)) {
+        dirchoice[0] = ychoice
+        dirchoice[1] = xchoice
+    } else {
+        dirchoice[0] = xchoice
+        dirchoice[1] = ychoice
+    }
+    dirchoice[3] = dirchoice[0] ^ 2
+    dirchoice[2] = dirchoice[1] ^ 2
+    dragonnumdirs = 0
+    for (let i = 0; i < 4; i++) {
+        if ((WALL_BITS[dirchoice[i]] & dragoncurrentcell) != 0) {
+            dirchoice[i] = 4
         } else {
-            return (xchoice ^ 2)
+            dragonnumdirs++
         }
     }
-    if (canDragonMove(ychoice) && (ychoice != avoid)) {
-        return ychoice
-    } else if (canDragonMove(xchoice) && (xchoice != avoid)) {
-        return xchoice
-    } else if (canDragonMove(xchoice ^ 2) && ((xchoice^2) != avoid)) {
-        return (xchoice ^ 2)
-    } else {
-        return (ychoice ^ 2)
+    for (let i = 0; i < 4; i++) {
+       while ((dirchoice[i] == 4) && (i < 3)) {
+            for (let j = i; j < 4; j++) {
+                dirchoice[j]  = dirchoice[j + 1]
+            }
+        }
     }
 }
+function displayThings() {
+    basic.showNumber(dirchoice[0])
+    basic.showString(",")
+    basic.showNumber(dirchoice[1])
+    basic.showString(",")
+    basic.showNumber(dirchoice[2])
+    basic.showString(",")
+    basic.showNumber(dirchoice[3])
+    basic.pause(1000)
+}
 
-function setDeadEnd() {
+function displayDND() {
+
+    basic.showNumber(dragonnumdirs)
+    basic.pause(1000)
+}
+function displayCCC() {
+
+    basic.showNumber(dragoncurrentcell)
+    basic.pause(1000)
+}
+
+function markBlock() {
     let cx = Math.trunc(dragonx / scale)
     let cy = Math.trunc(dragony / scale)
-    maze[cellNumber(cx, cy)] |= 128
-    deadEndTravel = true
+    let x = cellNumber(cx, cy)
+    block[x] = 1
 }
 
+function forTwoDirections() : number {
+    if (dirchoice[0] == (dragondir ^ 2)) {
+        return dirchoice[1]
+        basic.showIcon(IconNames.Duck)
+    }
+    return dirchoice[0]
+}
+
+function firstUnblockedDir(): number {
+    for (let i = 0; i < dragonnumdirs ; i++) {
+        if (!isDragonBlockedJunction(dirchoice[i]) && (dirchoice[i] != (dragondir^2))) {
+            if ((Math.trunc(dragonx / scale) < mazeWidth - 1) || (dirchoice[i] != RIGHT))
+                return dirchoice[i]
+        }
+    }
+    // no available directions except reverse
+    return dragondir^2
+}
+
+function lineOfSight() : boolean {
+    return false
+}
 function getDragonDirection() {
     if (dragonstate == 0) {
-        let oppdir = dragondir ^ 2
-        let cell = getCell(dragonx, dragony)
-        let num = numberOfDirections(dragonx, dragony)
-        if (num == 1) {
-// if at a dead end, simply reverse and set the flag
-            setDeadEnd()
-            switch (cell & 15) {
-                case 14: { dragondir = LEFT; break }
-                case 13: { dragondir = DOWN; break }
-                case 11: { dragondir = RIGHT; break }
-                case 7:  { dragondir = UP; break }
-            }
-// if it's a straight path, keep going in the same direction
-        } else if  ((num  == 2 ) &&
-                canMove(dragonx, dragony, dragondir) &&
-                canMove(dragonx, dragony, oppdir)) {
-                    dragondir = dragondir
-// if it's junction or a bend...
-// choose the best direction to go in                                    
-        } else {
-            if (num == 2) {
-                dragondir = chooseBestDir(dragondir^2)
+        dragoncurrentcell = getCell(dragonx, dragony)
+        dragonDirections()
+        if (input.buttonIsPressed(Button.A)) {
+            displayDND()
+            while (input.buttonIsPressed(Button.A)) {}
+            basic.clearScreen()
+        if (input.buttonIsPressed(Button.B)) {
+            displayCCC()
+            while (input.buttonIsPressed(Button.A)) {}
+            basic.clearScreen()
+        }
+        }
+        if (lineOfSight()) {
+        }
+        if (deadEndTravel) {
+            led.plot(4, 0)
+            if (dragonnumdirs > 2) {
+                deadEndTravel = false
             } else {
-                dragondir = chooseBestDir(dragondir^2)
+                markBlock()
+            }
+        } else {
+
+            led.unplot(4, 0)
+        }
+        switch (dragonnumdirs) {
+            case 1: {
+                deadEndTravel = true
+                markBlock()
+                dragondir = dirchoice[0]
+                break
+            }
+            case 2: {
+                dragondir = firstUnblockedDir()
+//                dragondir = forTwoDirections()
+                break
+
+            }
+            default: {
+                dragondir = firstUnblockedDir()
             }
         }
-    } 
+    }
 }
 function getMyMovement(isInvis: boolean) {
     if (mystate == 0) {
@@ -351,8 +421,12 @@ function getMyMovement(isInvis: boolean) {
 function dragonMaze(isInvisible: boolean) {
     mystate = 0
     dragonstate = 0
+    dragondir = NONE
+    dragoncurrentcell = getCell(dragonx, dragony)
+    dragonDirections()
+    dragondir = firstUnblockedDir()
     while (true) {
-        basic.pause(cyclepause*2)
+        basic.pause(cyclepause* 2)
         getMyMovement(isInvisible)
         getDragonDirection()
         moveDragon()
@@ -402,16 +476,18 @@ let y = 0
 let idealY = 0
 let idealX = 0
 let mystate = 0
-let dragonstate = 0
 let maxY = 0
 let maxX = 0
 let cellCount = 0
 let fy = 0
 let fx = 0
+let dragonstate = 0
 let dragony = 0
 let dragonx = 0
-let dir = NONE
+let dragoncurrentcell = 0
+let dragonnumdirs = 0
 let dragondir = NONE
+let dir = NONE
 let freeDirs = 0
 let ypos = 0
 let xpos = 0
@@ -425,7 +501,9 @@ let exit = 0
 let entrance = 0
 let wiggleFactor = 4
 let isInvisible: boolean = false
-let deadEndTravel: boolean = true
+let deadEndTravel: boolean = false
+let dirchoice: Buffer = pins.createBuffer(4)
+dirchoice.fill(4)
 scale = 6
 calcscalefactor()
 mazeWidth = Math.trunc(127 / scale)
@@ -436,10 +514,11 @@ maxX = mazeWidth * scale
 maxY = mazeHeight * scale
 let maze: Buffer = pins.createBuffer(mazeWidth * mazeHeight)
 maze.fill(15)
+let block: Buffer = pins.createBuffer(mazeWidth * mazeHeight)
+block.fill(0)
 basic.forever(function () {
     createMaze()
     drawMaze()
-    basic.showNumber(1)
     fx = 0 * scale + 1
     fy = entrance * scale + 1
     dragonx = maxX + 1 - scale

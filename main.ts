@@ -120,9 +120,7 @@ function makeOpenings() {
 
     entrance = Math.randomRange(0, mazeHeight - 1)
     exit = Math.randomRange(0, mazeHeight - 1)
-//    maze[cellNumber(0, entrance)] &= ~WALL_BITS[LEFT]
     maze[cellNumber(mazeWidth - 1, exit)] &= ~WALL_BITS[RIGHT]
-//    updateWalls(0, entrance)
     updateWalls(mazeWidth - 1, exit)
 }
 function createMaze() {
@@ -157,7 +155,7 @@ function showWall(dir: number) {
     if (dir == NONE) return
     y = Math.trunc(fx / scale)
     z = Math.trunc(fy / scale)
-    if ((getCell(fx, fy) & WALL_BITS[dir]) != 0) {
+    if ((cellAt(fcx, fcy) & WALL_BITS[dir]) != 0) {
         switch (dir) {
             case LEFT: { plotLeftWall(y, z); break }
             case RIGHT: { plotRightWall(y, z); break }
@@ -285,27 +283,9 @@ function getDragonDirection() {
     }
 }
 
-function getCell(x: number, y: number): number {
-    let cx = Math.trunc(x / scale)
-    let cy = Math.trunc(y / scale)
-    return maze[cellNumber(cx, cy)] & 15
-}
-function canMove2(x: number, y: number, dir: number): boolean {
-    if (dir == NONE)  return false
-    if (((x - 1) % scale == 0) && ((y - 1) % scale == 0)) {
-        return !(WALL_BITS[dir] & getCell(x, y))
-    } else {
-        return true
-    }
-}
 function canMove(x: number, y: number, dir: number): boolean {
     if (dir == NONE)  return false
-    if (((x - 1) % scale == 0) && ((y - 1) % scale == 0)) {
-        return !(WALL_BITS[dir] & getCell(x, y))
-    } else {
-        basic.showIcon(IconNames.Angry)
-        return true
-    }
+    return !(WALL_BITS[dir] & cellAt(fcx,fcy))
 }
 
 function getMyMovement(isInvis: boolean) {
@@ -329,10 +309,14 @@ function getMyMovement(isInvis: boolean) {
     }
 }
 function dragonMaze(isInvisible: boolean) {
+        fcx = Math.trunc(fx / scale)
+        fcy = Math.trunc(fy / scale)
+        dcx = Math.trunc(dragonx / scale)
+        dcy = Math.trunc(dragony / scale)
     mystate = 0
     dragonstate = 0
     dragondir = NONE
-    dragoncurrentcell = getCell(dragonx, dragony)
+    dragoncurrentcell = cellAt(dcx, dcy)
     dragonDirections()
     dragondir = firstUnblockedDir()
     while (true) {
@@ -364,7 +348,7 @@ function calcscalefactor() {
         }
         case 5: {
             scaleMoveFactor = 1
-            cyclepause = 40
+            cyclepause = 30
             break
         }
         default: {
@@ -423,7 +407,7 @@ let deadEndTravel: boolean = false
 let blockDoubleDeadEnd : boolean = false
 let dirchoice: Buffer = pins.createBuffer(4)
 dirchoice.fill(4)
-scale = 6
+scale = 5
 calcscalefactor()
 mazeWidth = Math.trunc(127 / scale)
 mazeHeight = Math.trunc(63 / scale)

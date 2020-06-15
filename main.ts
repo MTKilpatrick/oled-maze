@@ -1,4 +1,35 @@
-function drawGrid() {
+function unplotTopWall(i: number, j: number) {
+    ssd1309.setPlotOff()
+    ssd1309.plot(Plots.Line, i * scale + 1, j * scale, (i + 1) * scale - 1, j * scale)
+}
+function unplotRightWall(i: number, j: number) {
+    ssd1309.setPlotOff()
+    ssd1309.plot(Plots.Line, (i + 1) * scale, j * scale + 1, (i + 1) * scale, (j + 1) * scale - 1)
+}
+function unplotBottomWall(i: number, j: number) {
+    ssd1309.setPlotOff()
+    ssd1309.plot(Plots.Line, i * scale + 1, (j + 1) * scale, (i + 1) * scale - 1, (j + 1) * scale)
+}
+function plotTopWall(i: number, j: number) {
+    ssd1309.setPlotOn()
+    ssd1309.plot(Plots.Line, i * scale, j * scale, (i + 1) * scale, j * scale)
+}
+function unplotLeftWall(i: number, j: number) {
+    ssd1309.setPlotOff()
+    ssd1309.plot(Plots.Line, i * scale, j * scale + 1, i * scale, (j + 1) * scale - 1)
+}
+function plotRightWall(i: number, j: number) {
+    ssd1309.setPlotOn()
+    ssd1309.plot(Plots.Line, (i + 1) * scale, j * scale, (i + 1) * scale, (j + 1) * scale)
+}
+function plotBottomWall(i: number, j: number) {
+    ssd1309.setPlotOn()
+    ssd1309.plot(Plots.Line, i * scale, (j + 1) * scale, (i + 1) * scale, (j + 1) * scale)
+}
+function plotLeftWall(i: number, j: number) {
+    ssd1309.setPlotOn()
+    ssd1309.plot(Plots.Line, i * scale, j * scale, i * scale, (j + 1) * scale)
+}function drawGrid() {
     ssd1309.setPlotOn()
     for (let i = 0; i <= mazeWidth; i++) {
         ssd1309.plot(Plots.Line, i * scale, 0, i * scale, maxY)
@@ -135,38 +166,6 @@ function showWall(dir: number) {
         }
     }
 }
-function unplotTopWall(i: number, j: number) {
-    ssd1309.setPlotOff()
-    ssd1309.plot(Plots.Line, i * scale + 1, j * scale, (i + 1) * scale - 1, j * scale)
-}
-function unplotRightWall(i: number, j: number) {
-    ssd1309.setPlotOff()
-    ssd1309.plot(Plots.Line, (i + 1) * scale, j * scale + 1, (i + 1) * scale, (j + 1) * scale - 1)
-}
-function unplotBottomWall(i: number, j: number) {
-    ssd1309.setPlotOff()
-    ssd1309.plot(Plots.Line, i * scale + 1, (j + 1) * scale, (i + 1) * scale - 1, (j + 1) * scale)
-}
-function plotTopWall(i: number, j: number) {
-    ssd1309.setPlotOn()
-    ssd1309.plot(Plots.Line, i * scale, j * scale, (i + 1) * scale, j * scale)
-}
-function unplotLeftWall(i: number, j: number) {
-    ssd1309.setPlotOff()
-    ssd1309.plot(Plots.Line, i * scale, j * scale + 1, i * scale, (j + 1) * scale - 1)
-}
-function plotRightWall(i: number, j: number) {
-    ssd1309.setPlotOn()
-    ssd1309.plot(Plots.Line, (i + 1) * scale, j * scale, (i + 1) * scale, (j + 1) * scale)
-}
-function plotBottomWall(i: number, j: number) {
-    ssd1309.setPlotOn()
-    ssd1309.plot(Plots.Line, i * scale, (j + 1) * scale, (i + 1) * scale, (j + 1) * scale)
-}
-function plotLeftWall(i: number, j: number) {
-    ssd1309.setPlotOn()
-    ssd1309.plot(Plots.Line, i * scale, j * scale, i * scale, (j + 1) * scale)
-}
 function getJoystick(): number {
     let jX = pins.analogReadPin(AnalogPin.P1) >> 7
     let jY = pins.analogReadPin(AnalogPin.P0) >> 7
@@ -176,61 +175,22 @@ function getJoystick(): number {
         if (jX > 5) return RIGHT
     return NONE
 }
+
+
 function drawPlayer(x: number, y: number, state: boolean) {
     if (state) ssd1309.setPlotOn()
     else ssd1309.setPlotOff()
     ssd1309.plot(Plots.Box, x, y, x + scale - 2, y + scale - 2)
 }
-function getCell(x: number, y: number): number {
-    let cx = Math.trunc(x / scale)
-    let cy = Math.trunc(y / scale)
-    return maze[cellNumber(cx, cy)]
-}
-function getBlock(x: number, y: number) : boolean{
-    return (block[cellNumber(x, y)] != 0)
+
+function setDragonBlock(dir: number) {
+    block[cellNumber(dcx, dcy)] |= WALL_BITS[dir]
 }
 
-function isDragonBlockedJunction(dir: number): boolean {
-    let flag: boolean = false
-    let cx = Math.trunc(dragonx / scale)
-    let cy = Math.trunc(dragony / scale)
-    switch (dir) {
-        case  UP: {
-            if (cy > 0)  flag = getBlock(cx, cy - 1)
-            break
-        }
-        case  DOWN: {
-            if (cy < (mazeHeight - 1)) flag  = getBlock(cx, cy + 1)
-            break
-        }
-        case  LEFT: {
-            if (cx > 0)   flag = getBlock(cx - 1,cy) 
-            break
-        }
-        case  RIGHT: {
-            if (cx < (mazeWidth - 1)) flag = getBlock(cx + 1,cy) 
-            break
-        }
-    }
-    if (flag) {
-//        basic.showIcon(IconNames.Duck)
- //       basic.pause(1000)
-//        basic.clearScreen()
-    }
-    return flag
+function isDragonDirBlocked(dir: number): boolean {
+    return (block[cellNumber(dcx, dcy)] & WALL_BITS[dir]) != 0
 }
-function numberOfDirections(x: number, y: number) : number {
-    let n =  NUM_DIRS[getCell(x,y)]
-    return n
-}
-function canMove(x: number, y: number, dir: number): boolean {
-    if (dir == NONE)  return false
-    if (((x - 1) % scale == 0) && ((y - 1) % scale == 0)) {
-        return !(WALL_BITS[dir] & getCell(x, y))
-    } else {
-        return true
-    }
-}
+
 function moveDragon() {
     drawPlayer(dragonx, dragony, false)
     dragonx += DX[dragondir] * scaleMoveFactor
@@ -268,46 +228,21 @@ function dragonDirections() {
         }
     }
 }
-function displayThings() {
-    basic.showNumber(dirchoice[0])
-    basic.showString(",")
-    basic.showNumber(dirchoice[1])
-    basic.showString(",")
-    basic.showNumber(dirchoice[2])
-    basic.showString(",")
-    basic.showNumber(dirchoice[3])
-    basic.pause(1000)
-}
 
-function displayDND() {
-
-    basic.showNumber(dragonnumdirs)
-    basic.pause(1000)
-}
-function displayCCC() {
-
-    basic.showNumber(dragoncurrentcell)
-    basic.pause(1000)
-}
-
-function markBlock() {
-    let cx = Math.trunc(dragonx / scale)
-    let cy = Math.trunc(dragony / scale)
-    let x = cellNumber(cx, cy)
-    block[x] = 1
-}
-
-function forTwoDirections() : number {
-    if (dirchoice[0] == (dragondir ^ 2)) {
-        return dirchoice[1]
-        basic.showIcon(IconNames.Duck)
+function newDragonDir() {
+    let dd = firstUnblockedDir()
+    if (dd == (dragondir ^2)) {
+//        if (dragonnumdirs > 2) {
+            blockDoubleDeadEnd = true
+            led.plot(4,4)
+//        }
     }
-    return dirchoice[0]
+    return dd
 }
 
 function firstUnblockedDir(): number {
     for (let i = 0; i < dragonnumdirs ; i++) {
-        if (!isDragonBlockedJunction(dirchoice[i]) && (dirchoice[i] != (dragondir^2))) {
+        if (!isDragonDirBlocked(dirchoice[i]) && (dirchoice[i] != (dragondir^2))) {
             if ((Math.trunc(dragonx / scale) < mazeWidth - 1) || (dirchoice[i] != RIGHT))
                 return dirchoice[i]
         }
@@ -321,50 +256,58 @@ function lineOfSight() : boolean {
 }
 function getDragonDirection() {
     if (dragonstate == 0) {
-        dragoncurrentcell = getCell(dragonx, dragony)
+            led.unplot(4,4)     
+        dragoncurrentcell = cellAt(dcx, dcy)
         dragonDirections()
-        if (input.buttonIsPressed(Button.A)) {
-            displayDND()
-            while (input.buttonIsPressed(Button.A)) {}
-            basic.clearScreen()
-        if (input.buttonIsPressed(Button.B)) {
-            displayCCC()
-            while (input.buttonIsPressed(Button.A)) {}
-            basic.clearScreen()
-        }
-        }
         if (lineOfSight()) {
         }
+        if (blockDoubleDeadEnd) {
+            setDragonBlock(dragondir^2)
+            blockDoubleDeadEnd = false
+            led.unplot(4, 4)
+        }
         if (deadEndTravel) {
-            led.plot(4, 0)
             if (dragonnumdirs > 2) {
                 deadEndTravel = false
-            } else {
-                markBlock()
+                setDragonBlock(dragondir^2)
             }
-        } else {
-
-            led.unplot(4, 0)
         }
         switch (dragonnumdirs) {
             case 1: {
                 deadEndTravel = true
-                markBlock()
                 dragondir = dirchoice[0]
                 break
             }
-            case 2: {
-                dragondir = firstUnblockedDir()
-//                dragondir = forTwoDirections()
-                break
-
-            }
             default: {
-                dragondir = firstUnblockedDir()
+                dragondir = newDragonDir()
             }
         }
     }
 }
+
+function getCell(x: number, y: number): number {
+    let cx = Math.trunc(x / scale)
+    let cy = Math.trunc(y / scale)
+    return maze[cellNumber(cx, cy)] & 15
+}
+function canMove2(x: number, y: number, dir: number): boolean {
+    if (dir == NONE)  return false
+    if (((x - 1) % scale == 0) && ((y - 1) % scale == 0)) {
+        return !(WALL_BITS[dir] & getCell(x, y))
+    } else {
+        return true
+    }
+}
+function canMove(x: number, y: number, dir: number): boolean {
+    if (dir == NONE)  return false
+    if (((x - 1) % scale == 0) && ((y - 1) % scale == 0)) {
+        return !(WALL_BITS[dir] & getCell(x, y))
+    } else {
+        basic.showIcon(IconNames.Angry)
+        return true
+    }
+}
+
 function getMyMovement(isInvis: boolean) {
     if (mystate == 0) {
         dir = getJoystick()
@@ -393,6 +336,10 @@ function dragonMaze(isInvisible: boolean) {
     dragonDirections()
     dragondir = firstUnblockedDir()
     while (true) {
+        fcx = Math.trunc(fx / scale)
+        fcy = Math.trunc(fy / scale)
+        dcx = Math.trunc(dragonx / scale)
+        dcy = Math.trunc(dragony / scale)
         basic.pause(cyclepause* 2)
         getMyMovement(isInvisible)
         getDragonDirection()
@@ -448,9 +395,13 @@ let maxX = 0
 let cellCount = 0
 let fy = 0
 let fx = 0
+let fcx = 0
+let fcy = 0
 let dragonstate = 0
 let dragony = 0
 let dragonx = 0
+let dcx = 0
+let dcy = 0
 let dragoncurrentcell = 0
 let dragonnumdirs = 0
 let dragondir = NONE
@@ -466,9 +417,10 @@ let mazeWidth = 0
 let mazeHeight = 0
 let exit = 0
 let entrance = 0
-let wiggleFactor = 4
+let wiggleFactor = 5
 let isInvisible: boolean = false
 let deadEndTravel: boolean = false
+let blockDoubleDeadEnd : boolean = false
 let dirchoice: Buffer = pins.createBuffer(4)
 dirchoice.fill(4)
 scale = 6

@@ -1,11 +1,3 @@
-function showCellDiagram(a: number, b: number) {
-    basic.clearScreen()
-    let x = cellAt(a, b)
-    if ((x & 8) == 8) led.plot(2, 0)
-    if ((x & 4) == 4) led.plot(4, 2)
-    if ((x & 2) == 2) led.plot(2, 4)
-    if ((x & 1) == 1) led.plot(0, 2)
-}
 function drawGrid() {
     ssd1309.setPlotOn()
     for (let i = 0; i <= mazeWidth; i++) {
@@ -189,36 +181,11 @@ function drawPlayer(x: number, y: number, state: boolean) {
     else ssd1309.setPlotOff()
     ssd1309.plot(Plots.Box, x, y, x + scale - 2, y + scale - 2)
 }
-function isAtCellWall(x: number, y: number): boolean {
-    return ((x % scale == 0) || (y % scale == 0))
-}
 function getCell(x: number, y: number): number {
     let cx = Math.trunc(x / scale)
     let cy = Math.trunc(y / scale)
     return maze[cellNumber(cx, cy)]
 }
-function toWallGrid(dir: number): boolean {
-    switch (dir) {
-        case UP: {
-            if ((fy - 1) % scale == 0) return true
-            break
-        }
-        case DOWN: {
-            if ((fy + 1) % scale == 0) return true
-            break
-        }
-        case LEFT: {
-            if ((fx - 1) % scale == 0) return true
-            break
-        }
-        case RIGHT: {
-            if ((fx + 1) % scale == 0) return true
-            break
-        }
-    }
-    return false
-}
-
 function getBlock(x: number, y: number) : boolean{
     return (block[cellNumber(x, y)] != 0)
 }

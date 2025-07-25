@@ -4,7 +4,7 @@
     "dependencies": {
         "core": "*",
         "radio": "*",
-        "ssd1309": "github:mtkilpatrick/pxt-microbit-ssd1309#master"
+        "ssd1309": "github:mtkilpatrick/pxt-microbit-ssd1309#testing-it-instructions"
     },
     "files": [
         "main.blocks",
